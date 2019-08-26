@@ -19,11 +19,12 @@ def init_dataset(opt):
         val_dataset = MiniImagenetDataset(mode='val')
         trainval_dataset = MiniImagenetDataset(mode='val')
         test_dataset = MiniImagenetDataset(mode='test')
-    train_bs_class, eval_bs_class = BatchSampler, BatchSampler
+    train_bs_class = BatchSampler
+    eval_bs_class = BatchSampler
     if opt.task_shuffling == 'non_overlapping':
-      train_bs_class, eval_bs_class = NonOverlappingTasksBatchSampler, NonOverlappingTasksBatchSampler
+      train_bs_class = NonOverlappingTasksBatchSampler
     elif opt.task_shuffling == 'intratask':
-      train_bs_class, eval_bs_class = IntraTaskBatchSampler, NonOverlappingTasksBatchSampler
+      train_bs_class = IntraTaskBatchSampler
     # Opt for mini_imagenet: 
     # Namespace(batch_size=32, cuda=True, dataset='mini_imagenet', epochs=100, 
     # exp='mini_imagenet_5way_1shot', iterations=10000, lr=0.0001, num_cls=5, num_samples=1)
