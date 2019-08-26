@@ -32,7 +32,7 @@ class OmniglotDataset(data.Dataset):
     raw_folder = 'raw'
     processed_folder = 'data'
 
-    def __init__(self, mode='train', root='../dataset/omniglot', transform=None, target_transform=None, download=False):
+    def __init__(self, mode='train', root='../dataset/omniglot', transform=None, target_transform=None, download=True):
         '''
         The items are (filename,category). The index of all the categories can be found in self.idx_classes
         Args:
@@ -46,10 +46,14 @@ class OmniglotDataset(data.Dataset):
         self.transform = transform
         self.target_transform = target_transform
 
-        if download:
-            self.download()
+        # if download:
+        #    self.download()
 
         if not self._check_exists():
+          if download:
+            print('Downloading Omniglot...')
+            self.download()
+          else:
             raise RuntimeError(
                 'Dataset not found. You can use download=True to download it')
 

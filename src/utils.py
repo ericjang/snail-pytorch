@@ -1,5 +1,5 @@
 # coding=utf-8
-from batch_sampler import BatchSampler
+from batch_sampler import BatchSampler, NonOverlappingTasksBatchSampler, IntraTaskBatchSampler
 from omniglot_dataset import OmniglotDataset
 from mini_imagenet_dataset import MiniImagenetDataset
 import torch
@@ -19,30 +19,37 @@ def init_dataset(opt):
         val_dataset = MiniImagenetDataset(mode='val')
         trainval_dataset = MiniImagenetDataset(mode='val')
         test_dataset = MiniImagenetDataset(mode='test')
+    bs_class = BatchSampler
+    if opt.task_shuffling == 'non_overlapping':
+      bs_class = NonOverlappingTasksBatchSampler
+    elif opt.task_shuffling == 'intratask':
+      bs_class = IntraTaskBatchSampler
+    # Opt for mini_imagenet: 
+    # Namespace(batch_size=32, cuda=True, dataset='mini_imagenet', epochs=100, 
+    # exp='mini_imagenet_5way_1shot', iterations=10000, lr=0.0001, num_cls=5, num_samples=1)
+    tr_sampler = bs_class(labels=train_dataset.y,
+                          classes_per_it=opt.num_cls,
+                          num_samples=opt.num_samples,
+                          iterations=opt.iterations,
+                          batch_size=opt.batch_size)
 
-    tr_sampler = BatchSampler(labels=train_dataset.y,
-                                          classes_per_it=opt.num_cls,
-                                          num_samples=opt.num_samples,
-                                          iterations=opt.iterations,
-                                          batch_size=opt.batch_size)
+    val_sampler = bs_class(labels=val_dataset.y,
+                           classes_per_it=opt.num_cls,
+                           num_samples=opt.num_samples,
+                           iterations=opt.iterations,
+                           batch_size=opt.batch_size)
 
-    val_sampler = BatchSampler(labels=val_dataset.y,
-                                           classes_per_it=opt.num_cls,
-                                           num_samples=opt.num_samples,
-                                           iterations=opt.iterations,
-                                           batch_size=opt.batch_size)
+    trainval_sampler = bs_class(labels=trainval_dataset.y,
+                                classes_per_it=opt.num_cls,
+                                num_samples=opt.num_samples,
+                                iterations=opt.iterations,
+                                batch_size=opt.batch_size)
 
-    trainval_sampler = BatchSampler(labels=trainval_dataset.y,
-                                                classes_per_it=opt.num_cls,
-                                                num_samples=opt.num_samples,
-                                                iterations=opt.iterations,
-                                                batch_size=opt.batch_size)
-
-    test_sampler = BatchSampler(labels=test_dataset.y,
-                                            classes_per_it=opt.num_cls,
-                                            num_samples=opt.num_samples,
-                                            iterations=opt.iterations,
-                                            batch_size=opt.batch_size)
+    test_sampler = bs_class(labels=test_dataset.y,
+                            classes_per_it=opt.num_cls,
+                            num_samples=opt.num_samples,
+                            iterations=opt.iterations,
+                            batch_size=opt.batch_size)
 
     tr_dataloader = torch.utils.data.DataLoader(train_dataset,
                                                 batch_sampler=tr_sampler)

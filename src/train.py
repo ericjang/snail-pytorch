@@ -81,6 +81,9 @@ def train(opt, tr_dataloader, model, optim, val_dataloader=None):
             x, y = batch
             x, y, last_targets = batch_for_few_shot(opt, x, y)
             model_output = model(x, y)
+            # Model is shown num_samples*num_classes_per_it sequentially, then 
+            # it must classify an image (last_model) where softmax output indexes
+            # in the sequence of images it saw.
             last_model = model_output[:, -1, :]
             loss = loss_fn(last_model, last_targets)
             loss.backward()
@@ -149,6 +152,7 @@ def main():
     parser.add_argument('--lr', type=float, default=0.0001)
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--cuda', action='store_true')
+    parser.add_argument('--task_shuffling', type=str, default='intertask')
     options = parser.parse_args()
 
     if not os.path.exists(options.exp):
