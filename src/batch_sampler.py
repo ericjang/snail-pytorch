@@ -81,8 +81,8 @@ class BatchSampler(object):
                     batch[s] = self.label_tens[label_idx][sample_idxs]
                 if self.intratask_shuffle:
                     # This codebase has a weird 'circular wraparound' method of choosing validation examples, by selecting an offset.
-                    # offset is used to select the class (last_layer_input) to classify. For some reason hard-coded to 5 classes here.
-                    offset = random.randint(0, 4)
+                    # offset is used to select the class (last_layer_input) to classify.
+                    offset = random.randint(0, cpi-1)
                     batch = batch[offset:offset + true_num_samples]
                     # Permuting the ordering of the training examples within the inner loop for the sequential meta-learner. The -1 causes
                     # it to ignore the last element in the batch, which is the one we classify.

@@ -2,7 +2,7 @@
 from utils import init_dataset
 from omniglot_dataset import OmniglotDataset
 from snail import SnailFewShot
-
+import random
 import argparse
 import torch
 from torch.autograd import Variable
@@ -79,6 +79,12 @@ def train(opt, tr_dataloader, model, optim, val_dataloader=None):
         for batch in tqdm(tr_iter):
             optim.zero_grad()
             x, y = batch
+            if opt.dynamic_k:
+                # Dynamically zero out up to K-1 training batches.
+                x = x.reshape(torch.Size([opt.batch_size, -1]) + x.shape[-3:])
+                k = random.randint(0, opt.num_samples-1)
+                x[:, :k*opt.num_cls] = 0.
+                x = x.reshape(torch.Size([-1]) + x.shape[-3:])
             x, y, last_targets = batch_for_few_shot(opt, x, y)
             model_output = model(x, y)
             # Model is shown num_samples*num_classes_per_it sequentially, then 
@@ -99,6 +105,13 @@ def train(opt, tr_dataloader, model, optim, val_dataloader=None):
         model.eval()
         for batch in val_iter:
             x, y = batch
+            if opt.dynamic_k:
+                # Mask out all but last of the training shots.
+                x = x.reshape(torch.Size([opt.batch_size, -1]) + x.shape[-3:])
+                k = opt.num_samples - opt.num_eval_samples
+                import pdb; pdb.set_trace()
+                x[:, :k*opt.num_cls] = 0. 
+                x = x.reshape(torch.Size([-1]) + x.shape[-3:])
             x, y, last_targets = batch_for_few_shot(opt, x, y)
             model_output = model(x, y)
             last_model = model_output[:, -1, :]
@@ -149,10 +162,12 @@ def main():
     parser.add_argument('--dataset', type=str, default='omniglot')
     parser.add_argument('--num_cls', type=int, default=5)
     parser.add_argument('--num_samples', type=int, default=1)
+    parser.add_argument('--num_eval_samples', type=int, default=1)
     parser.add_argument('--lr', type=float, default=0.0001)
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--cuda', action='store_true')
     parser.add_argument('--task_shuffling', type=str, default='intertask')
+    parser.add_argument('--dynamic_k', action='store_true')
     options = parser.parse_args()
 
     if not os.path.exists(options.exp):
